@@ -1341,6 +1341,21 @@
     opacity: .7;
   }
 
+  .feedback-proof {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid rgba(0,153,170,.12);
+    font-size: 12px;
+    color: var(--sea-dark);
+    opacity: .8;
+    line-height: 1.5;
+  }
+
+  .feedback-proof strong {
+    color: var(--sea-dark);
+    font-weight: 700;
+  }
+
   .quick-item-key {
     color: var(--text-muted);
     font-weight: 500;
@@ -3306,7 +3321,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   }
 
-  // If user already chose an island this session, restore it — no banner needed
+  // Pre-fetch all vote counts in background
+  fetchAllVotes();
+
+  // If user already chose an island this session, restore it
   const saved = localStorage.getItem('abc_island');
   if (saved && ISLANDS[saved]) {
     selectIsland(saved);
@@ -3419,7 +3437,8 @@ function selectIsland(id) {
 
   // Guide table
   state.activeCategory = 'All';
-  renderGuide(data);
+  // Fetch live vote counts from Worker, then render guide
+  fetchVotes(id).then(() => renderGuide(data));
 
   // Show tool and scroll to it
   document.getElementById('toolSection').classList.add('visible');
@@ -3495,6 +3514,40 @@ function setCategory(cat) {
 }
 
 // ── GUIDE TABLE ───────────────────────────────────────────────────────────────
+// ── VOTES — Cloudflare Worker ─────────────────────────────────────────────────
+// Replace with your actual Worker URL after deploying votes-worker.js
+const VOTES_WORKER_URL = 'https://abc-votes.YOUR-SUBDOMAIN.workers.dev';
+
+// Cache votes in memory for current session
+const votesCache = { aruba: null, bonaire: null, curacao: null };
+
+async function fetchVotes(islandKey) {
+  try {
+    const res  = await fetch(`${VOTES_WORKER_URL}/votes?island=${islandKey}`);
+    const data = await res.json();
+    votesCache[islandKey] = {
+      votes:          data.votes          || 0,
+      votesThisMonth: data.votesThisMonth || 0,
+      votesLastMonth: data.votesLastMonth || 0,
+      lastVote:       data.lastVote       || null,
+    };
+  } catch (e) {
+    votesCache[islandKey] = votesCache[islandKey] || { votes: 0, votesThisMonth: 0, votesLastMonth: 0, lastVote: null };
+  }
+}
+
+async function fetchAllVotes() {
+  try {
+    const res  = await fetch(`${VOTES_WORKER_URL}/votes/all`);
+    const data = await res.json();
+    for (const island of ['aruba', 'bonaire', 'curacao']) {
+      if (data[island]) votesCache[island] = data[island];
+    }
+  } catch (e) {
+    // Silent fail
+  }
+}
+
 function renderGuide(data) {
   const body = document.getElementById('guideBody');
   const rows = state.activeCategory === 'All'
@@ -3519,12 +3572,26 @@ function renderGuide(data) {
     </tr>`;
   }).join('');
 
-  // Append inline feedback row (only when showing All category)
+  // Append inline feedback row (only on All tab)
   if (state.activeCategory === 'All') {
-    const key = `votes_${data.name.toLowerCase()}`;
-    const votes = parseInt(localStorage.getItem(key) || '0');
-    const hasVoted = localStorage.getItem(`voted_${data.name.toLowerCase()}`) === '1';
-    const formUrl = `${GOOGLE_FORM_URL}?usp=pp_url&entry.island=${encodeURIComponent(data.name)}`;
+    const islandKey = data.name.toLowerCase();
+    const stats     = votesCache[islandKey] || {};
+    const votes     = stats.votes || 0;
+    const monthly   = stats.votesThisMonth || 0;
+    const lastVote  = stats.lastVote ? timeAgo(stats.lastVote) : null;
+    const hasVoted  = localStorage.getItem(`voted_${islandKey}`) === '1';
+    const formUrl   = `${GOOGLE_FORM_URL}?usp=pp_url&entry.island=${encodeURIComponent(data.name)}`;
+
+    // Build the social proof string
+    let proofHtml = '';
+    if (votes > 0) {
+      let proof = `<strong>${votes}</strong> traveller${votes !== 1 ? 's' : ''} confirmed`;
+      if (monthly > 0) proof += ` &nbsp;·&nbsp; <strong>${monthly}</strong> this month`;
+      if (lastVote)    proof += ` &nbsp;·&nbsp; last verified ${lastVote}`;
+      proofHtml = `<div class="feedback-proof" id="feedbackProof_${islandKey}">${proof}</div>`;
+    } else {
+      proofHtml = `<div class="feedback-proof" id="feedbackProof_${islandKey}" style="display:none"></div>`;
+    }
 
     const feedbackRow = document.createElement('tr');
     feedbackRow.className = 'table-feedback-row';
@@ -3536,26 +3603,68 @@ function renderGuide(data) {
           </span>
           <div class="table-feedback-actions">
             <button class="feedback-yes-btn${hasVoted ? ' voted' : ''}"
-              onclick="handleVote('${data.name.toLowerCase()}')"
+              id="voteBtn_${islandKey}"
+              onclick="handleVote('${islandKey}')"
               ${hasVoted ? 'disabled' : ''}>
               ${hasVoted ? '✓ Thanks!' : '👍 Yes, looks right'}
             </button>
-            ${votes > 0 ? `<span class="feedback-count">${votes} traveller${votes !== 1 ? 's' : ''} confirmed</span>` : ''}
             <a href="${formUrl}" target="_blank" rel="noopener" class="feedback-suggest-btn">✏️ Suggest a change</a>
           </div>
         </div>
+        ${proofHtml}
       </td>`;
     body.appendChild(feedbackRow);
   }
 }
 
-function handleVote(islandKey) {
-  const key = `votes_${islandKey}`;
-  const votes = parseInt(localStorage.getItem(key) || '0') + 1;
-  localStorage.setItem(key, votes);
+async function handleVote(islandKey) {
+  // Optimistic UI — button changes instantly
+  const btn = document.getElementById(`voteBtn_${islandKey}`);
+  if (btn) { btn.textContent = '✓ Thanks!'; btn.classList.add('voted'); btn.disabled = true; }
   localStorage.setItem(`voted_${islandKey}`, '1');
-  // Re-render guide to reflect vote
-  renderGuide(ISLANDS[state.island]);
+
+  try {
+    const res  = await fetch(`${VOTES_WORKER_URL}/vote`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ island: islandKey }),
+    });
+    const data = await res.json();
+
+    // Update cache with fresh stats
+    votesCache[islandKey] = {
+      votes:          data.votes || 0,
+      votesThisMonth: data.votesThisMonth || 0,
+      votesLastMonth: data.votesLastMonth || 0,
+      lastVote:       data.lastVote || null,
+    };
+
+    // Update proof line in DOM
+    const proofEl = document.getElementById(`feedbackProof_${islandKey}`);
+    if (proofEl && data.votes > 0) {
+      let proof = `<strong>${data.votes}</strong> traveller${data.votes !== 1 ? 's' : ''} confirmed`;
+      if (data.votesThisMonth > 0) proof += ` &nbsp;·&nbsp; <strong>${data.votesThisMonth}</strong> this month`;
+      if (data.lastVote) proof += ` &nbsp;·&nbsp; last verified ${timeAgo(data.lastVote)}`;
+      proofEl.innerHTML = proof;
+      proofEl.style.display = '';
+    }
+  } catch (e) {
+    // Silent fail — button already updated
+  }
+}
+
+// ── TIME AGO HELPER ───────────────────────────────────────────────────────────
+function timeAgo(isoString) {
+  const diff = Date.now() - new Date(isoString).getTime();
+  const mins  = Math.floor(diff / 60000);
+  const hours = Math.floor(diff / 3600000);
+  const days  = Math.floor(diff / 86400000);
+  if (mins < 2)    return 'just now';
+  if (mins < 60)   return `${mins} minutes ago`;
+  if (hours < 24)  return `${hours} hour${hours !== 1 ? 's' : ''} ago`;
+  if (days < 30)   return `${days} day${days !== 1 ? 's' : ''} ago`;
+  const months = Math.floor(days / 30);
+  return `${months} month${months !== 1 ? 's' : ''} ago`;
 }
 
 function convertAmount(amtStr, toLocal, rate, sym, code) {

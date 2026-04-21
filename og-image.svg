@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#002f3d"/>
+      <stop offset="100%" stop-color="#006478"/>
+    </linearGradient>
+    <pattern id="dots" width="30" height="30" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="rgba(255,255,255,0.06)"/>
+    </pattern>
+  </defs>
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect width="1200" height="630" fill="url(#dots)"/>
+  <!-- Accent glow -->
+  <ellipse cx="600" cy="200" rx="500" ry="300" fill="#0099aa" opacity="0.12"/>
+  <!-- Logo mark -->
+  <rect x="60" y="60" width="72" height="72" rx="18" fill="#0099aa"/>
+  <path d="M71 93 Q80 80 89 93" stroke="#f07b3f" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <path d="M85 86 Q96 72 107 86" stroke="white" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <path d="M99 93 Q111 80 123 93" stroke="#f7a800" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+  <line x1="71" y1="99" x2="123" y2="99" stroke="rgba(255,255,255,0.3)" stroke-width="3" stroke-linecap="round"/>
+  <!-- Site name -->
+  <text x="152" y="88" font-family="Georgia, serif" font-size="22" font-weight="700" fill="white">ABC Tipping Guide</text>
+  <text x="152" y="113" font-family="Arial, sans-serif" font-size="15" fill="rgba(255,255,255,0.5)">abctippingguide.com</text>
+  <!-- Island tag -->
+  <rect x="60" y="200" height="40" rx="20" fill="#0099aa" opacity="0.25" width="180"/>
+  <text x="100" y="226" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#0099aa" letter-spacing="2">🌊  ABC ISLANDS</text>
+  <!-- Main headline -->
+  <text x="60" y="310" font-family="Georgia, serif" font-size="58" font-weight="700" fill="white">Tipping Guide</text>
+  <text x="60" y="378" font-family="Georgia, serif" font-size="58" font-weight="700" fill="white">Aruba · Bonaire · Curaçao</text>
+  <!-- Subline -->
+  <text x="60" y="440" font-family="Arial, sans-serif" font-size="26" fill="rgba(255,255,255,0.6)">Free calculator for every situation</text>
+  <!-- Bottom bar -->
+  <rect x="0" y="580" width="1200" height="50" fill="rgba(0,0,0,0.3)"/>
+  <text x="60" y="612" font-family="Arial, sans-serif" font-size="18" fill="rgba(255,255,255,0.5)">Free tip calculator · Works offline · Updated 2026</text>
+  <!-- Right wave decoration -->
+  <text x="950" y="420" font-size="200" fill="rgba(255,255,255,0.04)">🌊</text>
+</svg>

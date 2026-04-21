@@ -1,0 +1,27 @@
+{
+  "name": "ABC Islands Tipping Guide",
+  "short_name": "ABC Tipping",
+  "description": "Tipping guide and calculator for Aruba, Bonaire and Curaçao",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#003d4f",
+  "theme_color": "#003d4f",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='42' fill='%230099aa'/><path d='M28 124 Q48 96 68 124' stroke='%23f07b3f' stroke-width='12' stroke-linecap='round' fill='none'/><path d='M62 102 Q85 68 108 102' stroke='white' stroke-width='12' stroke-linecap='round' fill='none'/><path d='M96 124 Q122 96 148 124' stroke='%23f7a800' stroke-width='12' stroke-linecap='round' fill='none'/><line x1='28' y1='142' x2='164' y2='142' stroke='rgba(255,255,255,0.3)' stroke-width='7' stroke-linecap='round'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='112' fill='%230099aa'/><path d='M75 331 Q128 256 181 331' stroke='%23f07b3f' stroke-width='32' stroke-linecap='round' fill='none'/><path d='M166 272 Q228 182 290 272' stroke='white' stroke-width='32' stroke-linecap='round' fill='none'/><path d='M256 331 Q326 256 396 331' stroke='%23f7a800' stroke-width='32' stroke-linecap='round' fill='none'/><line x1='75' y1='379' x2='437' y2='379' stroke='rgba(255,255,255,0.3)' stroke-width='18' stroke-linecap='round'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["travel", "utilities"],
+  "lang": "en",
+  "scope": "/"
+}
